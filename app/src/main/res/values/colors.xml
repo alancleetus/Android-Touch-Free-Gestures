@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#01579B</color>
+    <color name="colorAccent">#f97242</color>
+    <color name="colorBackground">#f1f1f1</color>
+
+    <!--Pastels-->
+    <color name="redPastel">#ff758c</color>
+    <color name="orangePastel">#ffac76</color>
+    <color name="yellowPastel">#fee140</color>
+    <color name="greenPastel">#43e97b</color>
+    <color name="bluePastel">#8fd3f4</color>
+    <color name="indigoPastel">#a1adfd</color>
+    <color name="violetPastel">#f093fb</color>
+    <color name="whitePastel">#fff</color>
+
+    <!--extra colors-->
+    <color name="teal">#9bf9da</color>
+    <color name="red">#f29191</color>
+    <color name="white">#fff</color>
+    <color name="black">#000000</color>
+    <color name="grey">#DBDBE4</color>
+
 </resources>

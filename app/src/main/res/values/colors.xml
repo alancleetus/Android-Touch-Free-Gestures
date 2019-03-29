@@ -2,7 +2,7 @@
 <resources>
     <color name="colorPrimary">#2196F3</color>
     <color name="colorPrimaryDark">#01579B</color>
-    <color name="colorAccent">#f97242</color>
+    <color name="colorAccent">#FFC107</color>
     <color name="colorBackground">#f1f1f1</color>
 
     <!--Pastels-->

@@ -9,16 +9,20 @@
     </style>
 
     <style name="SensorName" parent="@android:style/TextAppearance">
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">24sp</item>
         <item name="android:textColor">@color/black</item>
+
         <!--item name="android:fontFamily"> </item-->
     </style>
 
-
-    <style name="SensorBody" parent="@android:style/TextAppearance">
+    <style name="Gesture" parent="@android:style/TextAppearance">
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@color/black</item>
+
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingLeft">16dp</item>
         <!--item name="android:fontFamily"> </item-->
     </style>
+
 
 </resources>

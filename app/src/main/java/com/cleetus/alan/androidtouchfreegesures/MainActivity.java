@@ -19,7 +19,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorManager sensorManager;
 
-    //proximity sensor variables
+    //proximity gesture variables
     private Sensor      proximitySensor;
     private boolean     isTapGestureAvailable = false;
     private final int   tapGestureDuration = 2000;
@@ -28,7 +28,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float       lastProximitySensorValue;
     private int         numOfTapGesturesDetected = 0;
 
-
+    //accelerometer gesture variables
+    private Sensor      accelerometerSensor;
+    private boolean     isShakeGestureAvailable = false;
+    private final int   shakeGestureDuration = 500;
+    private final int   shakeGestureThreshold = 500;
+    private final int   detectShakeEvery = 1000;
+    private long        lastShakeGestureTime = 0;
+    private long        lastShakeGestureDetectedTime = 0;
+    private float []    currentAccelerometerValues = {0,0,0};
+    private float []    prevAccelerometerValues = {0,0,0};
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,12 +57,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 isTapGestureAvailable = tapGestureSwitch.isChecked();
             }
         });
-
         /*PROXIMITY SENSOR END*/
 
 
         /*ACCELEROMETER START*/
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
+        final Switch shakeGestureSwitch = (Switch) findViewById(R.id.shakeGestureSwitch);
+        shakeGestureSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Log.d(Log_tag, "Shake Switch: "+ (shakeGestureSwitch.isChecked()?"Enabled": "Disabled"));
+                isShakeGestureAvailable = shakeGestureSwitch.isChecked();
+            }
+        });
         /*ACCELEROMETER END*/
 
 
@@ -76,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         * otherwise the value is ~5.  We can use the switching of the values when an
         * object is brought near by to detect an "air tap".
         *
-        * So to double airtap just bring your hand close to prox sensor, take it away, and repeat once more.
+        * So to double air tap just bring your hand close to prox sensor, take it away, and repeat once more.
         * */
         if(sensor.getType() == Sensor.TYPE_PROXIMITY && isTapGestureAvailable){
 
@@ -89,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 numOfTapGesturesDetected = 0;
                 lastProximitySensorValue = event.values[0];
 
-                Log.d(Log_tag, "Reset Tap Gesture");
+                //Log.d(Log_tag, "Reset Tap Gesture");
             }
             else if((event.values[0] != lastProximitySensorValue ) ) {
 
@@ -101,10 +119,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     numOfTapGesturesDetected = 0;
 
                     Log.d(Log_tag, "Double Tap Detected ");
-                    Toast.makeText(this, "double tap", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Double Tap", Toast.LENGTH_SHORT).show();
                 }
             }
             /**Proximity Sensor Code End**/
+        }
+        /*
+        * Accelerometer
+        * Detects one phone shake every 1. seconds.
+        * */
+        else if (sensor.getType() == Sensor.TYPE_ACCELEROMETER  && isShakeGestureAvailable) {
+
+            long currentTime = System.currentTimeMillis();
+            //reduce polling rate to 2 per second
+            if ((currentTime - lastShakeGestureTime) > shakeGestureDuration) {
+
+                long shakeTime = (currentTime - lastShakeGestureTime);
+                lastShakeGestureTime = currentTime;
+
+                currentAccelerometerValues[0] = event.values[0];
+                currentAccelerometerValues[1] = event.values[1];
+                currentAccelerometerValues[2] = event.values[2];
+
+                float speed = Math.abs(currentAccelerometerValues[0]+ currentAccelerometerValues[1]+  currentAccelerometerValues[2] - prevAccelerometerValues[0] - prevAccelerometerValues[1] - prevAccelerometerValues[2]) / shakeTime * 10000;
+
+                Log.d(Log_tag, "Speed: " + speed );
+                if (speed > shakeGestureThreshold && (currentTime-lastShakeGestureDetectedTime)>detectShakeEvery) {
+
+                    Log.d(Log_tag, "Shake detected w/ speed: " + speed );
+                    Toast.makeText(this, "Shake", Toast.LENGTH_SHORT).show();
+                    lastShakeGestureDetectedTime = currentTime;
+                }
+
+                prevAccelerometerValues[0] = currentAccelerometerValues[0];
+                prevAccelerometerValues[1] = currentAccelerometerValues[1];
+                prevAccelerometerValues[2] = currentAccelerometerValues[2];
+            }
+            /**Accelerometer Code End**/
         }
     }
 
@@ -118,6 +169,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         super.onResume();
         sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override

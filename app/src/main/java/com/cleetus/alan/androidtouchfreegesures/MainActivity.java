@@ -1,17 +1,16 @@
 package com.cleetus.alan.androidtouchfreegesures;
 
 import android.content.Context;
-import android.content.pm.ActivityInfo;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -48,6 +47,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int[]       rotationTriggerValue        = {-45, 45, -45, 70}; //{left, right, forward, backward}
     private long        lastRotationDetected        = 0;
     private long        detectRotateEvery           = 1000;
+
+
+    //magnetometer gesture variables
+    private Sensor      magnetometerSensor;
+    private boolean     isMagnetGestureAvailable    = true;
+    private float []    currentMagnetometerValues   = {0,0,0};
+    private float []    prevMagnetometerValues      = {0,0,0};
+    private float []    magnetometerDifference      = {0,0,0};
+    private int         up                          = 0;
+    private int         down                        = 0;
+    private long        lastMagnetDetectedTime      = 0;
+    private final int   detectMagnetEvery            = 800;
+
+    private final float alpha = (float) 0.8;
+
+    private Sensor uncalibratedMagnetometerSensor;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -70,7 +85,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
         /*PROXIMITY SENSOR END*/
 
-
         /*ACCELEROMETER START*/
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
@@ -84,8 +98,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
         /*ACCELEROMETER END*/
-
-
 
         /*ROTATION VECTOR START*/
         rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
@@ -136,6 +148,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         /*ROTATION VECTOR END*/
 
 
+        /*MAGNETOMETER SENSOR START*/
+        magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        uncalibratedMagnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
+
+        /*MAGNETOMETER SENSOR END*/
     }
 
     @Override
@@ -214,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         /**
          * Rotation Vector
-         * Wrist gestures. Based on the angle the phone is rotated using only your wrist,
+         * Wrist tilt gestures. Based on the angle the phone is rotated using only your wrist,
          * do different actions.
          */
         else if (sensor.getType() == Sensor.TYPE_ROTATION_VECTOR &&
@@ -243,21 +260,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
 
             long currentTime = System.currentTimeMillis();
-            if((currentTime -lastRotationDetected)>detectRotateEvery){
+            if ((currentTime - lastRotationDetected) > detectRotateEvery) {
                 /**Y-axis**/
                 //Rotate Left
 
                 //Log.d(Log_tag, "Rotate Y"+ orientations[2]);
                 if (isRotationGestureAvailable[0] && orientations[2] < rotationTriggerValue[0]) {
 
-                   Log.d(Log_tag, "Rotate Left\t" + orientations[2]+" "+ rotationTriggerValue[0]);
-                   Toast.makeText(this, "Rotate Left", Toast.LENGTH_SHORT).show();
-                   lastRotationDetected = currentTime;
+                    Log.d(Log_tag, "Rotate Left\t" + orientations[2] + " " + rotationTriggerValue[0]);
+                    Toast.makeText(this, "Rotate Left", Toast.LENGTH_SHORT).show();
+                    lastRotationDetected = currentTime;
                 }
                 //Rotate Right
                 else if (isRotationGestureAvailable[1] && orientations[2] > rotationTriggerValue[1]) {
 
-                    Log.d(Log_tag, "Rotate Right\t"+ orientations[2]);
+                    Log.d(Log_tag, "Rotate Right\t" + orientations[2]);
                     Toast.makeText(this, "Rotate Right", Toast.LENGTH_SHORT).show();
                     lastRotationDetected = currentTime;
                 }
@@ -267,19 +284,81 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //Log.d(Log_tag, "Rotate Y"+ orientations[1]);
                 if (isRotationGestureAvailable[2] && orientations[1] < rotationTriggerValue[2]) {
 
-                    Log.d(Log_tag, "Rotate Forward\t"+ orientations[1]);
+                    Log.d(Log_tag, "Rotate Forward\t" + orientations[1]);
                     Toast.makeText(this, "Rotate Forward", Toast.LENGTH_SHORT).show();
                     lastRotationDetected = currentTime;
                 }
                 //Rotate Back
                 else if (isRotationGestureAvailable[3] && orientations[1] > rotationTriggerValue[3]) {
 
-                    Log.d(Log_tag, "Rotate Backward\t"+ orientations[1]);
+                    Log.d(Log_tag, "Rotate Backward\t" + orientations[1]);
                     Toast.makeText(this, "Rotate Backward", Toast.LENGTH_SHORT).show();
                     lastRotationDetected = currentTime;
                 }
             }
-            /* Rotation Vector Code End**/
+        }
+        /* Rotation Vector Code End**/
+        else if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && isMagnetGestureAvailable) {
+
+
+            long currentTime = System.currentTimeMillis();
+
+            if ((currentTime - lastMagnetDetectedTime) > detectMagnetEvery ||
+                    lastMagnetDetectedTime ==0 ) {
+
+                // get high pass filter data by removing low pass data from raw values
+                currentMagnetometerValues[0] = event.values[0] - alpha * currentMagnetometerValues[0] + (1 - alpha) * event.values[0];
+                currentMagnetometerValues[1] = event.values[1] - alpha * currentMagnetometerValues[1] + (1 - alpha) * event.values[1];
+                currentMagnetometerValues[2] = event.values[1] - alpha * currentMagnetometerValues[2] + (1 - alpha) * event.values[2];
+
+                magnetometerDifference[0] = (currentMagnetometerValues[0] - prevMagnetometerValues[0]);
+                magnetometerDifference[1] = (currentMagnetometerValues[1] - prevMagnetometerValues[1]);
+                magnetometerDifference[2] = (currentMagnetometerValues[2] - prevMagnetometerValues[2]);
+
+                if (magnetometerDifference[1] > 10 || magnetometerDifference[1] < -10 && prevMagnetometerValues[1] != 0) {
+
+//                Log.d(Log_tag, "Sum of diff y: " + currentMagnetometerValues[1]+"//"+prevMagnetometerValues[1]);
+                    
+                    Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
+
+                    if (currentMagnetometerValues[1] > prevMagnetometerValues[1] + 10) {
+                        //Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
+
+                        up++;
+                        //Log.d(Log_tag, "UP++: " + up + "\t down: " + down);
+                    } else if (currentMagnetometerValues[1] + 10 < prevMagnetometerValues[1]) {
+                        //Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
+
+                        down++;
+                        //Log.d(Log_tag, "up: " + up + "\t DOWN++: " + down);
+                    }
+                }
+
+                if (up > down + 2) {
+                    Log.d(Log_tag, "====UP====" + "up: " + up + "\t down: " + down);
+                    Toast.makeText(this, "Magnet UP", Toast.LENGTH_SHORT).show();
+
+                    down = 0;
+                    up = 0;
+                    lastMagnetDetectedTime = currentTime;
+
+                    currentMagnetometerValues[0]=0;
+                    currentMagnetometerValues[1]=0;
+                    currentMagnetometerValues[2]=0;
+                } else if (down > up + 2) {
+                    Log.d(Log_tag, "===DOWN===" + "up: " + up + "\t down: " + down);
+                    Toast.makeText(this, "Magnet DOWN", Toast.LENGTH_SHORT).show();
+
+                    down = 0;
+                    up = 0;
+                    lastMagnetDetectedTime = currentTime;
+                }
+
+                prevMagnetometerValues[0] = currentMagnetometerValues[0];
+                prevMagnetometerValues[1] = currentMagnetometerValues[1];
+                prevMagnetometerValues[2] = currentMagnetometerValues[2];
+
+            }
         }
     }
 
@@ -295,6 +374,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager.registerListener(this, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, uncalibratedMagnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
     }
 
     @Override

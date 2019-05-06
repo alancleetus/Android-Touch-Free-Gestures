@@ -255,10 +255,55 @@
                         android:textAppearance="@style/Gesture" />
 
                 </LinearLayout>
-
-
-
             </LinearLayout>
+
+            <!--Magnetometer Card-->
+            <LinearLayout
+                android:id="@+id/magnetometerSensorLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:background="@color/white"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <TextView
+                    android:id="@+id/magnetometerLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Magnetometer"
+                    android:textAppearance="@style/SensorName"  />
+
+                <LinearLayout
+
+                    android:id="@+id/magGestureLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal" >
+
+                    <Switch
+                        android:id="@+id/magGestureSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="16dp"
+                        android:paddingTop="16dp"
+                        android:textAppearance="@style/Gesture"
+                        tools:checked="false" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:paddingLeft="16dp"
+                        android:paddingTop="16dp"
+                        android:text="Magnetic Swipe Gesture"
+                        android:textAppearance="@style/Gesture" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+
         </LinearLayout>
     </ScrollView>
 </android.support.constraint.ConstraintLayout>

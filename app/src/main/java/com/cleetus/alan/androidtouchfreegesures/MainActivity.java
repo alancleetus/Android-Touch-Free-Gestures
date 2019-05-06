@@ -10,10 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -51,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //magnetometer gesture variables
     private Sensor      magnetometerSensor;
-    private boolean     isMagnetGestureAvailable    = true;
+    private boolean     isMagnetGestureAvailable    = false;
     private float []    currentMagnetometerValues   = {0,0,0};
     private float []    prevMagnetometerValues      = {0,0,0};
     private float []    magnetometerDifference      = {0,0,0};
@@ -59,10 +56,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int         down                        = 0;
     private long        lastMagnetDetectedTime      = 0;
     private final int   detectMagnetEvery            = 800;
-
     private final float alpha = (float) 0.8;
 
     private Sensor uncalibratedMagnetometerSensor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -152,6 +149,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         uncalibratedMagnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
 
+        final Switch magGestureSwitch = (Switch) findViewById(R.id.magGestureSwitch);
+        magGestureSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Log.d(Log_tag, "Mag Switch: "+ (magGestureSwitch.isChecked()?"Enabled": "Disabled"));
+                isMagnetGestureAvailable = magGestureSwitch.isChecked();
+            }
+        });
         /*MAGNETOMETER SENSOR END*/
     }
 
@@ -300,11 +306,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         /* Rotation Vector Code End**/
         else if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD && isMagnetGestureAvailable) {
 
-
             long currentTime = System.currentTimeMillis();
 
-            if ((currentTime - lastMagnetDetectedTime) > detectMagnetEvery ||
-                    lastMagnetDetectedTime ==0 ) {
+            if ( (currentTime - lastMagnetDetectedTime) > detectMagnetEvery ||
+                    lastMagnetDetectedTime == 0 ) {
 
                 // get high pass filter data by removing low pass data from raw values
                 currentMagnetometerValues[0] = event.values[0] - alpha * currentMagnetometerValues[0] + (1 - alpha) * event.values[0];
@@ -317,22 +322,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 if (magnetometerDifference[1] > 10 || magnetometerDifference[1] < -10 && prevMagnetometerValues[1] != 0) {
 
-//                Log.d(Log_tag, "Sum of diff y: " + currentMagnetometerValues[1]+"//"+prevMagnetometerValues[1]);
-                    
-                    Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
+                    //Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
 
-                    if (currentMagnetometerValues[1] > prevMagnetometerValues[1] + 10) {
-                        //Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
-
+                    //Log.d(Log_tag,  "up: " + up + "\t down: " + down);
+                    if (currentMagnetometerValues[1] > prevMagnetometerValues[1] + 10)
                         up++;
-                        //Log.d(Log_tag, "UP++: " + up + "\t down: " + down);
-                    } else if (currentMagnetometerValues[1] + 10 < prevMagnetometerValues[1]) {
-                        //Log.d(Log_tag, "Sum of diff y: " + magnetometerDifference[1]);
-
+                    else if (currentMagnetometerValues[1] + 10 < prevMagnetometerValues[1])
                         down++;
-                        //Log.d(Log_tag, "up: " + up + "\t DOWN++: " + down);
+
                     }
-                }
 
                 if (up > down + 2) {
                     Log.d(Log_tag, "====UP====" + "up: " + up + "\t down: " + down);
@@ -352,6 +350,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     down = 0;
                     up = 0;
                     lastMagnetDetectedTime = currentTime;
+
+                    currentMagnetometerValues[0]=0;
+                    currentMagnetometerValues[1]=0;
+                    currentMagnetometerValues[2]=0;
                 }
 
                 prevMagnetometerValues[0] = currentMagnetometerValues[0];
